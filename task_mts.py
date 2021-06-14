@@ -1,32 +1,17 @@
+import logging
 import os
 import tkinter as tk
 from time import sleep
-from tkinter import filedialog, ttk  # noqa
-import logging
+from tkinter import filedialog
+
 import pandas as pd
 import requests
 import xlsxwriter
-from PIL import ImageTk, Image
 from dotenv import load_dotenv
-from page_objects import PageObject, PageElement  # noqa
-from selenium import webdriver
-from webdriver_manager.firefox import GeckoDriverManager
 
 load_dotenv()
 
 logging.basicConfig(level=logging.DEBUG)
-
-
-# todo создать
-class CourtPage(PageObject):
-    pass
-
-
-class Court:
-    COURT_URL = 'https://sudrf.ru/index.php?id=300#sp'
-
-    def __init__(self):
-        pass
 
 
 class FsspAPI:
@@ -36,7 +21,7 @@ class FsspAPI:
     """
     FSSP_URL = 'https://fssp.gov.ru/'
     URL_FSSP_API = 'https://api-ip.fssp.gov.ru/api/v1.0/'
-    REGIONS = tuple([i for i in range(1, 79)] + [86, 89, 91, 92])  # regions list
+    REGIONS = tuple([i for i in range(1, 79)] + [86, 89, 91, 92])
 
     def __init__(self, strftime_mask: str = '%d.%m.%Y'):
         self.strftime_mask = strftime_mask
@@ -51,7 +36,8 @@ class FsspAPI:
         :return str: datetime in string
         """
         timestamp.to_pydatetime()
-        return timestamp.strftime('%d.%m.%Y') if mask is None else timestamp.strftime(mask)
+        return (timestamp.strftime('%d.%m.%Y')
+                if mask is None else timestamp.strftime(mask))
 
     def get_full_fio(self, obj: list) -> str:  # noqa
         """Get ful last name first name patronymic as string"""
@@ -182,15 +168,13 @@ class FsspAPI:
                         sleep(5)
 
 
-class Application(tk.Frame, FsspAPI, Court):
+class Application(tk.Frame, FsspAPI):
 
     def __init__(self, root=None):
         tk.Frame.__init__(self, root)
         FsspAPI.__init__(self)
-        Court.__init__(self)
 
         self.excel_data = None
-        self.court_result = True  # флаг о проверке всех запросов на court
 
         # Tkinter GUI
         self.root = root
@@ -206,56 +190,43 @@ class Application(tk.Frame, FsspAPI, Court):
 
         # Tkinter GUI
 
-        # Кнопки
+        # Buttons
         # Загрузка excel
         self.button_load_excel = tk.Button(text='Загрузите файл excel', command=self.load_excel,
                                            bg='green', fg='white', font=('helvetica', 12, 'bold'))
         self.canvas.create_window(400, 180, window=self.button_load_excel)
 
-        # Судопроизводство
+        # Courts
         # https://sudrf.ru/index.php?id=300#sp
         self.button_court = tk.Button(self.root, text='Запрос в суды',
-                                      # command=self.get_court,  # todo временно удалено- метод не доработан
+                                      # command=self.run_court,
                                       bg='red',
                                       font=('helvetica', 11, 'bold'))
         self.canvas.create_window(400, 220, window=self.button_court)
 
         # ФССП
-        self.button_fssp = tk.Button(self.root, text='Запрос в ФССП', command=self.run_api_fssp, bg='red',
+        self.button_fssp = tk.Button(self.root, text='Запрос в ФССП',
+                                     command=self.run_api_fssp,
+                                     bg='red',
                                      font=('helvetica', 11, 'bold'))
         self.canvas.create_window(400, 260, window=self.button_fssp)
 
         # exit
-        self.button_exit = tk.Button(self.root, text='Выход', command=self.root.destroy, bg='green',
+        self.button_exit = tk.Button(self.root,
+                                     text='Выход',
+                                     command=self.root.destroy,
+                                     bg='green',
                                      font=('helvetica', 11, 'bold'))
         self.canvas.create_window(400, 300, window=self.button_exit)
-
-    def launch_selenium(self, in_background: bool = True):
-        """
-        Запук selenium
-        :param in_background: bool возможность запуска в фоне. True- запуск в фоновом режиме, False- не в фоне
-        :return:
-        """
-        self.options = webdriver.FirefoxOptions()
-
-        # options для загрузки в фоновом режиме
-        if in_background:
-            self.options.add_argument("--headless")
-
-        self.browser = webdriver.Firefox(
-            executable_path=GeckoDriverManager().install(),
-            options=self.options
-        )
-        self.browser.implicitly_wait(5)
-        sleep(1.5)
-        return self.browser
 
     def load_excel(self) -> None:
         """
         Load and parse excel. Launch by button
         """
         import_file_path = filedialog.askopenfilename()
-        df = pd.read_excel(import_file_path, engine="odf", usecols=['Фамилия', 'Имя', 'Отчество', 'Дата рождения'])
+        df = pd.read_excel(import_file_path,
+                           engine="odf",
+                           usecols=['Фамилия', 'Имя', 'Отчество', 'Дата рождения'])
         self.excel_data = df.values
 
     def create_excel(self, data: list, file_name: str) -> None:  # noqa
@@ -295,80 +266,12 @@ class Application(tk.Frame, FsspAPI, Court):
         Send request to API, get data and create excel file.
         Working by push button
         """
-        self.post_search_group(self.excel_data)
-        self.get_status_api_fssp()
-        self.create_excel(data=self.fssp_data, file_name='result_fssp_api.xlsx')
-
-    def run_court(self):
-        """
-        Нужно:
-        Получить на вход таблицу Excel (колонки Фамилия, Имя, Отчество) и построчно получить
-        информацию по судебным делам федеральных судов общей юрисдикции в г. Москва (https://sudrf.ru/index.php?id=300#sp).
-        """
-        browser = self.launch_selenium()
-        # TODO добавить url
-        response = browser.get(self.COURT_URL)
-        # 1. Построчечено читаем файл
-        # 2. отправляем форму
-
-        browser.close()
-        pass
-
-    # TODO неиспользуемые наработки
-
-    def get_fssp(self):
-        '''
-        https://selenium-python.readthedocs.io/
-        https://selenium-python.readthedocs.io/navigating.html#filling-in-forms
-        Нужно:
-        Получить на вход таблицу Excel (колонки Фамилия, Имя, Отчество, Дата рождения)
-        и построчно получить информацию по исполнительным производствам из сайта ФССП (http://fssprus.ru/).
-        '''
-        # 1. Построчечено читаем файл
-        # 2. отправляем форму
-        # 3. скрапим результат
-        # 4. повторяем цикл с пункта 1
-        # проверка наличия загруженной информации из ексель
-        if not self.excel_data:
-            return
-
-        # при запуске браузера сделать проверку на возможно модальное окно
-
-        # todo переместить все элементы в экземпляр класса
-        browser = self.launch_selenium()
-        sleep(1)
-        close_modal = browser.find_element_by_xpath('//button[@class="tingle-modal__close"]')
-        if close_modal:
-            close_modal.click()
-        sleep(1)
-        for value in self.excel_data:
-            # должны быть заполнены все 4 ячейки в excel
-            if len(value) < 4:
-                continue
-            browser.get(self.FSSP_URL)
-            blank = browser.find_element_by_id('debt-form01')
-            button = browser.find_element_by_xpath('//button[@class="btn btn-primary"]')
-            blank.sendKeys(value.join())
-            button.click()
-            sleep(2)
-            # TODO переход на след страничку
-            # 1. Основная таблица
-            # table[@class='list border table alt-p05']
-            if browser.find_element_by_xpath('table[@class="list border table alt-p05"]'):
-                pass
-
-                # 2. Внутри таблицы разбиты на три класса:
-                # class = " "
-                # class = "even "
-                # class = "even bottom" -  только нижний элемент
-
-            browser.delete_all_cookies()  # удаление куков
-        browser.close()
-
-    def create_image(self, img):
-        """Отображение капчи"""
-        img = ImageTk.PhotoImage(Image.open(img))
-        self.canvas.create_image(20, 20, image=img)
+        if self.excel_data:
+            self.post_search_group(self.excel_data)
+            self.get_status_api_fssp()
+            self.create_excel(data=self.fssp_data, file_name='result_fssp_api.xlsx')
+        logging.debug('Сначала необходио загрузить excel файл')
+        return
 
 
 if __name__ == '__main__':
