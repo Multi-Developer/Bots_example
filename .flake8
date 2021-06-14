@@ -1,0 +1,11 @@
+[flake8]
+ignore = D203
+exclude =
+    .git,
+    __pycache__,
+    draft_not_to_add.py,
+    old,
+    build,
+    dist,
+    venv
+max-complexity = 10
