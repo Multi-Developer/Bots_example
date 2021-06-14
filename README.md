@@ -2,7 +2,7 @@
 1. Зарегистрироваться на платформе https://api-ip.fssp.gov.ru/ 
 2. Создать файл `.env` в папке с `task_mts.py`, Добавить константу(название нельзя менять): `FSSP_TOKEN='тут полученный токен'`
 3. Создать виртуальное окружение https://docs.python.org/3/library/venv.html , активировать.
-4. Установить необходимые пакеты Ecnfyj`pip install -r requirements.txt`
+4. Установить необходимые пакеты `pip install -r requirements.txt`
 5. Запустить файл `python task_mts.py`
 6. Работа происходит в GUI, основанной на Tkinter
    - Сначала загрузить excel-файл(два примера с данными для загрузки есть вместе с проектом- test_file_1 и test_file_2). 
