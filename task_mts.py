@@ -147,20 +147,22 @@ class FsspAPI:
                     }
                 })
 
-                # request can't be greater than 50 in len() or if region last in list
-                if len(data_params) >= 49 or region == self.REGIONS[len(self.REGIONS) - 1]:
+                # request can't be greater than 50 in len() or
+                # if region last in list
+                if (len(data_params) >= 49 or region == self.REGIONS[len(self.REGIONS) - 1]):
                     data['request'] = data_params
 
                     while True:
                         r = requests.post(total_url, json=data)
                         if r.status_code == 200:
-                            self.fssp_tasks.append(r.json()['response']['task'])
+                            self.fssp_tasks.append(
+                                r.json()['response']['task'])
                             data['request'].clear()
                             logging.info('Successfully request')
                             sleep(5)
                             break
-                        elif (r.status_code == 429
-                              and r.json()['exception'] == 'Дождитесь результата предыдущего группового запроса'):
+                        elif (r.status_code == 429 and
+                              r.json()['exception'] == 'Дождитесь результата предыдущего группового запроса'):
                             logging.info('Need wait. r.status_code == 429')
                             sleep(5)
 
@@ -192,8 +194,11 @@ class Application(tk.Frame, FsspAPI):
 
         # Buttons
         # Загрузка excel
-        self.button_load_excel = tk.Button(text='Загрузите файл excel', command=self.load_excel,
-                                           bg='green', fg='white', font=('helvetica', 12, 'bold'))
+        self.button_load_excel = tk.Button(text='Загрузите файл excel',
+                                           command=self.load_excel,
+                                           bg='green',
+                                           fg='white',
+                                           font=('helvetica', 12, 'bold'))
         self.canvas.create_window(400, 180, window=self.button_load_excel)
 
         # Courts
@@ -224,9 +229,11 @@ class Application(tk.Frame, FsspAPI):
         Load and parse excel. Launch by button
         """
         import_file_path = filedialog.askopenfilename()
-        df = pd.read_excel(import_file_path,
-                           engine="odf",
-                           usecols=['Фамилия', 'Имя', 'Отчество', 'Дата рождения'])
+        df = pd.read_excel(
+            import_file_path,
+            engine="odf",
+            usecols=['Фамилия', 'Имя', 'Отчество', 'Дата рождения'])
+
         self.excel_data = df.values
 
     def create_excel(self, data: list, file_name: str) -> None:  # noqa
@@ -237,7 +244,8 @@ class Application(tk.Frame, FsspAPI):
         data = [{'key1': 'value1', 'key2': 'value2'... }]
 
         :param data: list with dict values to write into excel
-        :param file_name: str full file name with extension. Only excel format excepted
+        :param file_name: str full file name with extension.
+        Only excel format excepted
 
         :return: None
         """
@@ -271,8 +279,8 @@ class Application(tk.Frame, FsspAPI):
             return
         self.post_search_group(self.excel_data)
         self.get_status_api_fssp()
-        self.create_excel(data=self.fssp_data, file_name='result_fssp_api.xlsx')
-
+        self.create_excel(data=self.fssp_data,
+                          file_name='result_fssp_api.xlsx')
 
 
 if __name__ == '__main__':
