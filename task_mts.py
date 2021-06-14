@@ -266,12 +266,13 @@ class Application(tk.Frame, FsspAPI):
         Send request to API, get data and create excel file.
         Working by push button
         """
-        if self.excel_data:
-            self.post_search_group(self.excel_data)
-            self.get_status_api_fssp()
-            self.create_excel(data=self.fssp_data, file_name='result_fssp_api.xlsx')
-        logging.debug('Сначала необходио загрузить excel файл')
-        return
+        if self.excel_data is None:
+            logging.debug('Сначала необходио загрузить excel файл')
+            return
+        self.post_search_group(self.excel_data)
+        self.get_status_api_fssp()
+        self.create_excel(data=self.fssp_data, file_name='result_fssp_api.xlsx')
+
 
 
 if __name__ == '__main__':
